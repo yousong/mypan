@@ -306,6 +306,11 @@ func (su *Sync) sync(
 	i, j := 0, 0
 	srcsz, dstsz := len(srcList), len(dstList)
 	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		if i >= srcsz {
 			return su.actionDstMore(ctx, dstList[j:]...)
 		} else if j >= dstsz {
