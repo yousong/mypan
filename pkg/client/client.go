@@ -228,4 +228,16 @@ type ClientI interface {
 		ctx context.Context,
 		fileList []string,
 	) (FileManagerResponse, error)
+	Rename(
+		ctx context.Context,
+		path, newname string,
+	) (FileManagerResponse, error)
+	Copy(
+		ctx context.Context,
+		path, dest string,
+	) (FileManagerResponse, error)
+	Move(
+		ctx context.Context,
+		path, dest string,
+	) (FileManagerResponse, error)
 }

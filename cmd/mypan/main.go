@@ -184,6 +184,23 @@ func (myApp MyApp) syncAction(cCtx *cli.Context, src, dst string, up bool) error
 	return nil
 }
 
+func (myApp MyApp) copyMoveAction(
+	cCtx *cli.Context,
+	action func(context.Context, string, string) (client.FileManagerResponse, error),
+) error {
+	remotepath0 := cCtx.Args().Get(0)
+	remotepath1 := cCtx.Args().Get(1)
+	if remotepath0 == "" || remotepath1 == "" {
+		return cli.Exit("remotepath0 and remotepath1 arguments are required", 1)
+	}
+	resp, err := action(myApp.ctx, remotepath0, remotepath1)
+	if err != nil {
+		return cli.Exit(err, 1)
+	}
+	myApp.render.Render(resp)
+	return nil
+}
+
 func (myApp MyApp) Run(args []string) {
 	cfg := config.Global
 
@@ -415,6 +432,39 @@ func (myApp MyApp) Run(args []string) {
 					dst := cCtx.Args().Get(0)
 					src := cCtx.Args().Get(1)
 					return myApp.syncAction(cCtx, src, dst, false)
+				},
+			},
+			{
+				Name:      "rename",
+				ArgsUsage: "remotepath newname",
+				Action: func(cCtx *cli.Context) error {
+					path := cCtx.Args().Get(0)
+					newname := cCtx.Args().Get(1)
+					if path == "" || newname == "" {
+						return cli.Exit("path and newname arguments are required", 1)
+					}
+					resp, err := myApp.dstClient.Rename(myApp.ctx, path, newname)
+					if err != nil {
+						return cli.Exit(err, 1)
+					}
+					myApp.render.Render(resp)
+					return nil
+				},
+			},
+			{
+				Name:      "mv",
+				Aliases:   []string{"move"},
+				ArgsUsage: "remotepath0 remotepath1",
+				Action: func(cCtx *cli.Context) error {
+					return myApp.copyMoveAction(cCtx, myApp.dstClient.Move)
+				},
+			},
+			{
+				Name:      "cp",
+				Aliases:   []string{"copy"},
+				ArgsUsage: "remotepath0 remotepath1",
+				Action: func(cCtx *cli.Context) error {
+					return myApp.copyMoveAction(cCtx, myApp.dstClient.Copy)
 				},
 			},
 		},

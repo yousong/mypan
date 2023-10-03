@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"path/filepath"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -42,6 +43,65 @@ func (client *Client) DeleteMulti(
 		fileList1[i] = client.AbsPath(file)
 	}
 	resp, err := client.doFileManager(ctx, opDelete, fileList1)
+	return resp, err
+}
+
+func (client *Client) Rename(
+	ctx context.Context,
+	path, newname string,
+) (FileManagerResponse, error) {
+	resp, err := client.renameMulti(ctx, [2]string{path, newname})
+	return resp, err
+}
+
+func (client *Client) renameMulti(
+	ctx context.Context,
+	pairs ...[2]string,
+) (FileManagerResponse, error) {
+	var filelist []map[string]string
+	for _, p := range pairs {
+		filelist = append(filelist, map[string]string{
+			"path":    client.AbsPath(p[0]),
+			"newname": p[1],
+		})
+	}
+	resp, err := client.doFileManager(ctx, opRename, filelist)
+	return resp, err
+}
+
+func (client *Client) Copy(
+	ctx context.Context,
+	path, dest string,
+) (FileManagerResponse, error) {
+	resp, err := client.copyMoveMulti(ctx, opCopy, [2]string{path, dest})
+	return resp, err
+}
+
+func (client *Client) Move(
+	ctx context.Context,
+	path, dest string,
+) (FileManagerResponse, error) {
+	resp, err := client.copyMoveMulti(ctx, opMove, [2]string{path, dest})
+	return resp, err
+}
+
+func (client *Client) copyMoveMulti(
+	ctx context.Context,
+	op string,
+	pairs ...[2]string,
+) (FileManagerResponse, error) {
+	var filelist []map[string]string
+	for _, p := range pairs {
+		dest := client.AbsPath(p[1])
+		newname := filepath.Base(dest)
+		dest = filepath.Dir(dest)
+		filelist = append(filelist, map[string]string{
+			"path":    client.AbsPath(p[0]),
+			"dest":    dest,
+			"newname": newname,
+		})
+	}
+	resp, err := client.doFileManager(ctx, op, filelist)
 	return resp, err
 }
 
