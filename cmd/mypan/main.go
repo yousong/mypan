@@ -72,10 +72,12 @@ func (rdr Render) RenderListResponse(resp client.ListResponse) {
 	w := ptable.NewWriter()
 	for _, f := range resp.List {
 		name := f.ServerFilename
-		sizeCol := strconv.FormatUint(f.Size, 10)
-		if f.IsDir != 0 {
+		var sizeCol string
+		if f.IsDir == 0 {
+			sizeCol = strconv.FormatUint(f.Size, 10)
+		} else {
 			name += "/"
-			if f.DirEmpty != nil && *f.DirEmpty == 0 {
+			if f.Empty != nil && *f.Empty == 0 {
 				sizeCol = "*"
 			} else {
 				sizeCol = ""
@@ -87,7 +89,6 @@ func (rdr Render) RenderListResponse(resp client.ListResponse) {
 			sizeCol,
 			mtimeStr,
 			f.Md5,
-			f.FsId,
 		})
 	}
 	rdr.pRender(w)
@@ -97,8 +98,10 @@ func (rdr Render) RenderListAllResponse(resp client.ListAllResponse) {
 	w := ptable.NewWriter()
 	for _, f := range resp.List {
 		name := f.Path
-		sizeCol := strconv.FormatUint(f.Size, 10)
-		if f.IsDir != 0 {
+		var sizeCol string
+		if f.IsDir == 0 {
+			sizeCol = strconv.FormatUint(f.Size, 10)
+		} else {
 			name += "/"
 			sizeCol = "-"
 		}
@@ -108,7 +111,6 @@ func (rdr Render) RenderListAllResponse(resp client.ListAllResponse) {
 			sizeCol,
 			mtimeStr,
 			f.Md5,
-			f.FsId,
 		})
 	}
 	rdr.pRender(w)

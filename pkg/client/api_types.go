@@ -78,19 +78,24 @@ type ListResponse struct {
 	Errno    int    `json:"errno"`
 	GuidInfo string `json:"guid_info"`
 	List     []struct {
-		FsId           uint64   `json:"fs_id"`
-		Path           string   `json:"path"`
-		ServerFilename string   `json:"server_filename"`
-		Size           uint64   `json:"size"`
-		ServerCtime    uint64   `json:"server_ctime"`
-		ServerMtime    uint64   `json:"server_mtime"`
-		LocalCtime     uint64   `json:"local_ctime"`
-		LocalMtime     uint64   `json:"local_mtime"`
-		IsDir          int      `json:"isdir"`
-		Category       int      `json:"category"`
-		Md5            string   `json:"md5"`
-		DirEmpty       *int     `json:"dir_empty,omitempty"`
-		Thumbs         []string `json:"thumbs"`
+		FsId           uint64 `json:"fs_id"`
+		Path           string `json:"path"`
+		ServerFilename string `json:"server_filename"`
+		Size           uint64 `json:"size"`
+		ServerCtime    uint64 `json:"server_ctime"`
+		ServerMtime    uint64 `json:"server_mtime"`
+		LocalCtime     uint64 `json:"local_ctime"`
+		LocalMtime     uint64 `json:"local_mtime"`
+		IsDir          int    `json:"isdir"`
+		Category       int    `json:"category"`
+		Md5            string `json:"md5"`
+		// Empty indicates whether the directory is empty.
+		//
+		// NOTE It's not mentioned in the doc
+		Empty *int `json:"empty,omitempty"`
+		// DirEmpty indicates whether there is a subdir.
+		DirEmpty *int     `json:"dir_empty,omitempty"`
+		Thumbs   []string `json:"thumbs"`
 	} `json:"list"`
 }
 
