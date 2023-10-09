@@ -469,6 +469,14 @@ func (myApp MyApp) Run(args []string) {
 					return myApp.copyMoveAction(cCtx, myApp.dstClient.Copy)
 				},
 			},
+			{
+				Name: "version",
+				Action: func(cCtx *cli.Context) error {
+					version := util.VersionFromBuildInfo()
+					fmt.Println(version)
+					return nil
+				},
+			},
 		},
 		Authors: []*cli.Author{
 			&cli.Author{Name: "Yousong Zhou", Email: "yszhou4tech@gmail.com"},
