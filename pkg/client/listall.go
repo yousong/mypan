@@ -4,7 +4,6 @@ package client
 
 import (
 	"context"
-	"net/http"
 	"net/url"
 	"strconv"
 )
@@ -39,7 +38,6 @@ func (client *Client) listAll(ctx context.Context, dir string, start int) (ListA
 	var (
 		accessAuth = client.GetAccessAuth()
 	)
-	queryUrl := newMultimediaAPIURL()
 	queryArgs := url.Values{}
 	queryArgs.Set("method", "listall")
 	queryArgs.Set("access_token", accessAuth.AccessToken)
@@ -48,13 +46,14 @@ func (client *Client) listAll(ctx context.Context, dir string, start int) (ListA
 	queryArgs.Set("start", strconv.Itoa(start))
 	queryArgs.Set("limit", "1000")
 	queryArgs.Set("web", "0") // returns no thumbnail
-	queryUrl.RawQuery = queryArgs.Encode()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, queryUrl.String(), nil)
-	if err != nil {
-		return ListAllResponse{}, err
-	}
+
 	var resp ListAllResponse
-	if err := client.doHTTPReqJSON(ctx, req, &resp); err != nil {
+	if err := client.doHTTPGetJSON(
+		ctx,
+		newMultimediaAPIURL(),
+		queryArgs,
+		&resp,
+	); err != nil {
 		return resp, err
 	}
 	return resp, nil

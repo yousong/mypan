@@ -4,7 +4,6 @@ package client
 
 import (
 	"context"
-	"net/http"
 	"net/url"
 	"strconv"
 )
@@ -50,14 +49,14 @@ func (client *Client) list(ctx context.Context, dir string, start int) (ListResp
 	queryArgs.Set("showempty", "1") // returns dir_empty attr
 	queryArgs.Set("folder", "0")    // not only folder
 	queryArgs.Set("web", "0")       // returns no thumbnail
-	queryUrl := newFileAPIURL()
-	queryUrl.RawQuery = queryArgs.Encode()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, queryUrl.String(), nil)
-	if err != nil {
-		return ListResponse{}, false, err
-	}
+
 	var resp ListResponse
-	if err := client.doHTTPReqJSON(ctx, req, &resp); err != nil {
+	if err := client.doHTTPGetJSON(
+		ctx,
+		newFileAPIURL(),
+		queryArgs,
+		&resp,
+	); err != nil {
 		return resp, false, err
 	}
 	hasMore := len(resp.List) >= limit
