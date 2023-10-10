@@ -156,7 +156,7 @@ type FileMetaResponse struct {
 	ServerCtime uint64   `json:"server_ctime"`
 	ServerMtime uint64   `json:"server_mtime"`
 	Category    int      `json:"category"`
-	Thumbs      []string `json:"thumbs"`
+	Thumbs      map[string]string `json:"thumbs"`
 
 	// FsId and Md5 is present and should be, though not mentioned in the doc
 	FsId uint64 `json:"fs_id"`
