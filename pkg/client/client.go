@@ -55,7 +55,10 @@ func New(cfg Config) *Client {
 }
 
 func (client *Client) AbsPath(relpath string) string {
-	return path.Join(client.cfg.AppBaseDir, relpath)
+	if relpath == "" || relpath[0] != '/' {
+		return path.Join(client.cfg.AppBaseDir, relpath)
+	}
+	return relpath
 }
 
 func (client *Client) RelPath(abspath string) string {
