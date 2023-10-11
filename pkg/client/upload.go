@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"syscall"
 
 	"mypan/pkg/util"
 
@@ -22,6 +23,12 @@ const (
 	// Client limit
 	MIN_SIZE_MULTIPART_UPLOAD = 5 * MiB
 )
+
+type statOpt struct {
+	Size  int64
+	Ctime int64
+	Mtime int64
+}
 
 func seekStart(f *os.File) error {
 	_, err := f.Seek(0, 0)
@@ -39,24 +46,30 @@ func (client *Client) Upload(
 	if err != nil {
 		return resp, err
 	}
-	sz, err := f.Seek(0, 2)
+	fi, err := f.Stat()
 	if err != nil {
 		return resp, err
 	}
-	if err := seekStart(f); err != nil {
-		return resp, err
+	statopt := statOpt{
+		Size:  fi.Size(),
+		Mtime: fi.ModTime().Unix(),
 	}
-	if sz < MIN_SIZE_MULTIPART_UPLOAD {
-		return client.uploadSingle(ctx, f, sz, dst)
+	switch fiSys := fi.Sys().(type) {
+	case syscall.Stat_t:
+		statopt.Ctime = fiSys.Ctim.Sec
+	default:
+		client.vlog().Infof("unexpected stat type: %T", fiSys)
+	}
+	if statopt.Size < MIN_SIZE_MULTIPART_UPLOAD {
+		return client.uploadSingle(ctx, f, dst)
 	} else {
-		return client.uploadMultipart(ctx, f, sz, dst)
+		return client.uploadMultipart(ctx, f, statopt, dst)
 	}
 }
 
 func (client *Client) uploadSingle(
 	ctx context.Context,
 	f *os.File,
-	sz int64,
 	dst string,
 ) (UploadResponse, error) {
 	var (
@@ -102,7 +115,7 @@ func (client *Client) uploadSingle(
 func (client *Client) uploadMultipart(
 	ctx context.Context,
 	f *os.File,
-	sz int64,
+	statopt statOpt,
 	dst string,
 ) (UploadResponse, error) {
 	var ret UploadResponse
@@ -118,7 +131,7 @@ func (client *Client) uploadMultipart(
 	blockListData := string(util.MustMarshalJSON(blockList))
 
 	// precreate
-	precreateResp, err := client.uploadPrecreate(ctx, dst, sz, blockListData)
+	precreateResp, err := client.uploadPrecreate(ctx, dst, statopt, blockListData)
 	if err != nil {
 		return ret, errors.Wrapf(err, "precreate %q", dst)
 	}
@@ -150,7 +163,7 @@ func (client *Client) uploadMultipart(
 	}
 
 	// combine parts
-	ret, err = client.uploadCreate(ctx, dst, sz, uploadId, blockListData)
+	ret, err = client.uploadCreate(ctx, dst, statopt, uploadId, blockListData)
 	if err != nil {
 		return ret, errors.Wrapf(err, "file create %q", dst)
 	}
@@ -160,7 +173,7 @@ func (client *Client) uploadMultipart(
 func (client *Client) uploadPrecreate(
 	ctx context.Context,
 	dst string,
-	size int64,
+	statopt statOpt,
 	blockListData string,
 ) (FilePrecreateResponse, error) {
 	var (
@@ -176,7 +189,7 @@ func (client *Client) uploadPrecreate(
 	bodyArgs.Set("path", dst)
 	bodyArgs.Set("isdir", "0")
 	bodyArgs.Set("autoinit", "1")
-	bodyArgs.Set("size", strconv.FormatInt(size, 10))
+	bodyArgs.Set("size", strconv.FormatInt(statopt.Size, 10))
 	bodyArgs.Set("block_list", blockListData)
 	bodyArgs.Set("rtype", strconv.Itoa(RTYPE_OVERWRITE))
 	body := bytes.NewBufferString(bodyArgs.Encode())
@@ -229,7 +242,7 @@ func (client *Client) uploadSuperfile2(
 func (client *Client) uploadCreate(
 	ctx context.Context,
 	dst string,
-	size int64,
+	statopt statOpt,
 	uploadId string,
 	blockListData string,
 ) (UploadResponse, error) {
@@ -245,10 +258,12 @@ func (client *Client) uploadCreate(
 	bodyArgs := url.Values{}
 	bodyArgs.Set("path", dst)
 	bodyArgs.Set("isdir", "0")
-	bodyArgs.Set("size", strconv.FormatInt(size, 10))
 	bodyArgs.Set("uploadid", uploadId)
 	bodyArgs.Set("block_list", blockListData)
 	bodyArgs.Set("rtype", strconv.Itoa(RTYPE_OVERWRITE))
+	bodyArgs.Set("size", strconv.FormatInt(statopt.Size, 10))
+	bodyArgs.Set("local_ctime", strconv.FormatInt(statopt.Ctime, 10))
+	bodyArgs.Set("local_mtime", strconv.FormatInt(statopt.Mtime, 10))
 	body := bytes.NewBufferString(bodyArgs.Encode())
 	if err := client.doHTTPPostFormJSON(
 		ctx,
