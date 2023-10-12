@@ -212,6 +212,7 @@ type ClientI interface {
 	DownloadByMeta(ctx context.Context, meta FileMetaResponse) (*http.Response, error)
 	DownloadByFsId(ctx context.Context, fsId uint64) (*http.Response, error)
 	DownloadByDLink(ctx context.Context, dlink string, opts ...func(*http.Request)) (*http.Response, error)
+	HeadByDLink(ctx context.Context, dlink string) (*http.Response, error)
 
 	Upload(
 		ctx context.Context,

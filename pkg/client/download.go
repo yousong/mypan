@@ -35,7 +35,7 @@ func (client *Client) DownloadByMeta(ctx context.Context, meta FileMetaResponse)
 	return client.DownloadByDLink(ctx, dlink)
 }
 
-func (client *Client) downloadGetReqByDLink(ctx context.Context, dlink string) (*http.Request, error) {
+func (client *Client) getReqByDLink(ctx context.Context, method, dlink string) (*http.Request, error) {
 	var (
 		accessAuth = client.GetAccessAuth()
 	)
@@ -47,7 +47,7 @@ func (client *Client) downloadGetReqByDLink(ctx context.Context, dlink string) (
 	dlinkQueryArgs.Set("access_token", accessAuth.AccessToken)
 	dlinkUrl.RawQuery = dlinkQueryArgs.Encode()
 	dlink = dlinkUrl.String()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, dlink, nil)
+	req, err := http.NewRequestWithContext(ctx, method, dlink, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "new http request %s", dlink)
 	}
@@ -57,7 +57,7 @@ func (client *Client) downloadGetReqByDLink(ctx context.Context, dlink string) (
 }
 
 func (client *Client) DownloadByDLink(ctx context.Context, dlink string, opts ...func(*http.Request)) (*http.Response, error) {
-	httpReq, err := client.downloadGetReqByDLink(ctx, dlink)
+	httpReq, err := client.getReqByDLink(ctx, http.MethodGet, dlink)
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +88,18 @@ func (client *Client) DownloadByDLink(ctx context.Context, dlink string, opts ..
 			done = total - contentLen
 		}
 		httpResp.Body = newReadCloseTrackerWithCtx(ctx, httpResp.Body, total, done)
+	}
+	return httpResp, nil
+}
+
+func (client *Client) HeadByDLink(ctx context.Context, dlink string) (*http.Response, error) {
+	httpReq, err := client.getReqByDLink(ctx, http.MethodHead, dlink)
+	if err != nil {
+		return nil, err
+	}
+	httpResp, err := client.doHTTPReq(ctx, httpReq)
+	if err != nil {
+		return nil, err
 	}
 	return httpResp, nil
 }

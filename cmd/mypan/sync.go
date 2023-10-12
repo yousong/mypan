@@ -565,7 +565,7 @@ func (su *Sync) getOrSetDstCacheEntry(ctx context.Context, dstAbsPath string) Ds
 		if err != nil {
 			return nil
 		}
-		httpResp, err := su.client.DownloadByDLink(ctx, meta.DLink)
+		httpResp, err := su.client.HeadByDLink(ctx, meta.DLink)
 		if err != nil {
 			return nil
 		}
