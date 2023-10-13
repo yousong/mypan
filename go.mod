@@ -15,6 +15,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/strfmt v0.21.7 // indirect
+	github.com/hanwen/go-fuse/v2 v2.4.0 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect

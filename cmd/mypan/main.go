@@ -404,13 +404,12 @@ func (myApp MyApp) Run(args []string) {
 				Name:    "down",
 				Aliases: []string{"download"},
 				Flags: []cli.Flag{
-					&cli.PathFlag{Name: "out", Aliases: []string{"o"}},
 					&cli.BoolFlag{Name: "continue", Aliases: []string{"c"}},
 				},
 				ArgsUsage: "remotepath localpath",
 				Action: func(cCtx *cli.Context) error {
-					relpath := cCtx.Args().First()
-					outpath := cCtx.Path("out")
+					relpath := cCtx.Args().Get(0)
+					outpath := cCtx.Args().Get(1)
 					myApp.progressRender()
 					downMan := NewDownMan(myApp.dstClient).
 						Continue(cCtx.Bool("continue")).
@@ -467,6 +466,40 @@ func (myApp MyApp) Run(args []string) {
 				ArgsUsage: "remotepath0 remotepath1",
 				Action: func(cCtx *cli.Context) error {
 					return myApp.copyMoveAction(cCtx, myApp.dstClient.Copy)
+				},
+			},
+			{
+				Name:      "mount",
+				ArgsUsage: "remotepath localpath",
+				Flags: []cli.Flag{
+					&cli.StringSliceFlag{Name: "o"},
+				},
+				Action: func(cCtx *cli.Context) error {
+					dst := cCtx.Args().Get(0)
+					src := cCtx.Args().Get(1)
+					if src == "" {
+						return cli.Exit("local target dir is requried", 1)
+					}
+					meta, err := myApp.dstClient.FileMetaByPath(myApp.ctx, dst)
+					if err != nil {
+						return cli.Exit(err, 1)
+					}
+					svr, err := Mount(myApp.dstClient, dst, meta.FsId, src, cCtx.StringSlice("o"))
+					if err != nil {
+						return cli.Exit(err, 1)
+					}
+
+					go func() {
+						select {
+						case <-myApp.ctx.Done():
+							err := svr.Unmount()
+							if err != nil {
+								glog.Errorf("umount: %v", err)
+							}
+						}
+					}()
+					svr.Wait()
+					return nil
 				},
 			},
 			{
