@@ -149,18 +149,23 @@ type FileManagerResponse struct {
 type FileMetaResponse struct {
 	DLink string `json:"dlink"`
 
-	Path        string   `json:"path"`
-	Filename    string   `json:"filename"`
-	Size        uint64   `json:"size"`
-	IsDir       int      `json:"isdir"`
-	ServerCtime uint64   `json:"server_ctime"`
-	ServerMtime uint64   `json:"server_mtime"`
-	Category    int      `json:"category"`
+	Path        string            `json:"path"`
+	Filename    string            `json:"filename"`
+	Size        uint64            `json:"size"`
+	IsDir       int               `json:"isdir"`
+	ServerCtime uint64            `json:"server_ctime"`
+	ServerMtime uint64            `json:"server_mtime"`
+	Category    int               `json:"category"`
 	Thumbs      map[string]string `json:"thumbs"`
 
-	// FsId and Md5 is present and should be, though not mentioned in the doc
-	FsId uint64 `json:"fs_id"`
-	Md5  string `json:"md5"`
+	// The following fields are present and should be, though not mentioned
+	// in the doc
+	//
+	//   FsId, Md5, LocalCtime, LocalMtime
+	FsId       uint64 `json:"fs_id"`
+	Md5        string `json:"md5"`
+	LocalCtime uint64 `json:"local_ctime"`
+	LocalMtime uint64 `json:"local_mtime"`
 }
 
 type FileMetasResponse struct {
