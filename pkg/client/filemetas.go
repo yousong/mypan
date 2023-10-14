@@ -34,8 +34,9 @@ func (client *Client) FileMetasByPath(ctx context.Context, relpaths []string) (F
 
 	dirNames := map[string][]string{}
 	for _, relpath := range relpaths {
-		dir := filepath.Dir(relpath)
-		name := filepath.Base(relpath)
+		abspath := client.AbsPath(relpath)
+		dir := filepath.Dir(abspath)
+		name := filepath.Base(abspath)
 		dirNames[dir] = append(dirNames[dir], name)
 	}
 	var fsIds []uint64
