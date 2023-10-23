@@ -83,7 +83,7 @@ func (rdr Render) RenderListResponse(resp client.ListResponse) {
 				sizeCol = ""
 			}
 		}
-		mtimeStr := unixTimeFormatter(int64(f.ServerMtime))
+		mtimeStr := unixTimeFormatter(int64(f.LocalMtime))
 		w.AppendRow([]interface{}{
 			name,
 			sizeCol,
@@ -105,7 +105,7 @@ func (rdr Render) RenderListAllResponse(resp client.ListAllResponse) {
 			name += "/"
 			sizeCol = "-"
 		}
-		mtimeStr := unixTimeFormatter(int64(f.ServerMtime))
+		mtimeStr := unixTimeFormatter(int64(f.LocalMtime))
 		w.AppendRow([]interface{}{
 			name,
 			sizeCol,
