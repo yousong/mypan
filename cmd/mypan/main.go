@@ -404,13 +404,12 @@ func (myApp MyApp) Run(args []string) {
 				Name:    "down",
 				Aliases: []string{"download"},
 				Flags: []cli.Flag{
-					&cli.PathFlag{Name: "out", Aliases: []string{"o"}},
 					&cli.BoolFlag{Name: "continue", Aliases: []string{"c"}},
 				},
 				ArgsUsage: "remotepath localpath",
 				Action: func(cCtx *cli.Context) error {
-					relpath := cCtx.Args().First()
-					outpath := cCtx.Path("out")
+					relpath := cCtx.Args().Get(0)
+					outpath := cCtx.Args().Get(1)
 					myApp.progressRender()
 					downMan := NewDownMan(myApp.dstClient).
 						Continue(cCtx.Bool("continue")).
