@@ -195,6 +195,7 @@ func (dm *DownMan) callCacheSetter(ctx context.Context, relpath, srcMd5 string) 
 	meta, err := dm.client.FileMetaByPath(ctx, relpath)
 	if err != nil {
 		glog.Warningf("filemeta %q: %v", abspath, err)
+		return
 	}
 	dm.cacheSetter.SetDst(
 		meta.Path, meta.Md5,
