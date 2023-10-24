@@ -55,7 +55,7 @@ func (client *Client) Upload(
 		Mtime: fi.ModTime().Unix(),
 	}
 	switch fiSys := fi.Sys().(type) {
-	case syscall.Stat_t:
+	case *syscall.Stat_t:
 		statopt.Ctime = fiSys.Ctim.Sec
 	default:
 		client.vlog().Infof("unexpected stat type: %T", fiSys)
