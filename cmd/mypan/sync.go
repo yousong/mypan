@@ -223,6 +223,7 @@ func newSync(
 		su.dstClient = DstClientRemoteReadOnly{dstClient}
 	}
 	downMan.Continue(su.continue_)
+	downMan.Progress(su.progress)
 	return su
 }
 
