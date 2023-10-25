@@ -72,15 +72,9 @@ type OrderI interface {
 }
 
 func Less(i, j OrderI) bool {
-	if i.IsDir() == j.IsDir() {
-		namei := i.Name()
-		namej := j.Name()
-		return namei < namej
-	} else if i.IsDir() {
-		return false
-	} else {
-		return true
-	}
+	namei := i.Name()
+	namej := j.Name()
+	return namei < namej
 }
 
 type SrcList []Src
