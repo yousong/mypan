@@ -268,6 +268,19 @@ func (myApp MyApp) Run(args []string) {
 			myApp.dstClient = client.New(clientCfg)
 			return nil
 		},
+		ExitErrHandler: func(cCtx *cli.Context, err error) {
+			if err == nil {
+				return
+			}
+			if _, ok := err.(cli.ExitCoder); ok {
+				cli.HandleExitCoder(err)
+			} else if _, ok := err.(cli.MultiError); ok {
+				cli.HandleExitCoder(err)
+			} else {
+				glog.Errorf("%v", err)
+				cli.OsExiter(1)
+			}
+		},
 		Commands: []*cli.Command{
 			{
 				Name: "auth",
