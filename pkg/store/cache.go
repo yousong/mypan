@@ -5,6 +5,7 @@ package store
 import (
 	"os"
 	"reflect"
+	"sync"
 
 	"github.com/pkg/errors"
 )
@@ -20,7 +21,8 @@ type FileCacheStore struct {
 	jsonStore StoreSerdeI
 	newFunc   NewCacheEntryFunc
 
-	m map[string]CacheEntry
+	mu *sync.Mutex
+	m  map[string]CacheEntry
 }
 
 func NewFileCacheStore(
@@ -28,13 +30,13 @@ func NewFileCacheStore(
 	jsonStore StoreSerdeI,
 	newFunc NewCacheEntryFunc,
 ) (*FileCacheStore, error) {
-	// TODO lock
 	fcs := &FileCacheStore{
 		fileKey:   fileKey,
 		jsonStore: jsonStore,
 		newFunc:   newFunc,
 
-		m: map[string]CacheEntry{},
+		mu: &sync.Mutex{},
+		m:  map[string]CacheEntry{},
 	}
 	if err := fcs.load(); err != nil {
 		cause := errors.Cause(err)
@@ -46,11 +48,15 @@ func NewFileCacheStore(
 }
 
 func (fcs *FileCacheStore) Get(key string) (CacheEntry, bool) {
+	fcs.mu.Lock()
+	defer fcs.mu.Unlock()
 	ce, ok := fcs.m[key]
 	return ce, ok
 }
 
 func (fcs *FileCacheStore) Set(ce CacheEntry) error {
+	fcs.mu.Lock()
+	defer fcs.mu.Unlock()
 	fcs.m[ce.Key()] = ce
 	return fcs.dump()
 }
