@@ -328,7 +328,7 @@ func (su *Sync) sync(
 						return err
 					}
 					if err := su.sync(ctx, srclist1, dstlist1); err != nil {
-						return errors.Wrapf(err, "cmp %q, %q", namei, namej)
+						return errors.Wrapf(err, "cmp %q", namei)
 					}
 					i += 1
 					j += 1
