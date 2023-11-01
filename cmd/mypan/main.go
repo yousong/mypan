@@ -46,7 +46,9 @@ func (rdr Render) pRender(w ptable.Writer) {
 	w.Style().Options.SeparateRows = false
 	w.Style().Options.SeparateColumns = false
 	out := w.Render()
-	fmt.Printf("%s\n", out)
+	if len(out) > 0 {
+		fmt.Printf("%s\n", out)
+	}
 }
 
 func (rdr Render) Render(v interface{}) {
