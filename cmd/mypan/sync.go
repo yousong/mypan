@@ -17,6 +17,7 @@ import (
 	"mypan/pkg/client"
 	"mypan/pkg/config"
 	"mypan/pkg/store"
+	"mypan/pkg/util"
 
 	"github.com/golang/glog"
 	"github.com/jedib0t/go-pretty/progress"
@@ -139,7 +140,8 @@ type Sync struct {
 	dstCacheStore *store.FileCacheStore
 	cacheSetter   CacheSetterI
 
-	progress progress.Writer
+	progress   progress.Writer
+	parallelDo *util.ParallelDo
 
 	up        bool
 	dryrun    bool
@@ -218,6 +220,7 @@ func newSync(
 	}
 	downMan.Continue(su.continue_)
 	downMan.Progress(su.progress)
+	downMan.Parallel(su.parallelDo)
 	return su
 }
 
@@ -244,6 +247,12 @@ func Continue() SyncOpt {
 func Progress(progress progress.Writer) SyncOpt {
 	return func(su *Sync) {
 		su.progress = progress
+	}
+}
+
+func Parallel(n int) SyncOpt {
+	return func(su *Sync) {
+		su.parallelDo = util.NewParallelDo(n)
 	}
 }
 
@@ -288,7 +297,10 @@ func (su *Sync) Do(ctx context.Context) error {
 			return err
 		}
 	}
-	return su.sync(ctx, srcList, dstList)
+	if err := su.sync(ctx, srcList, dstList); err != nil {
+		return err
+	}
+	return util.TryParallelJoin(ctx, su.parallelDo)
 }
 
 func (su *Sync) sync(
@@ -469,27 +481,36 @@ func (su *Sync) upSrc(
 		}
 		return su.upSrcList(ctx, srcList)
 	} else {
-		path := su.upRemotePath(src)
-		if su.progress != nil {
-			message := src.AbsPath()
-			pt := NewProgressTracker(su.progress, message)
-			ctx = context.WithValue(ctx, client.XloadTrackerKey, pt)
-		}
-		resp, err := su.dstClient.Up(ctx, src, path)
-		if err != nil {
-			return err
-		}
-		sce := su.getOrSetSrcCacheEntry(ctx, src.AbsPath())
-		if sce != nil && resp.Md5 != "" {
-			su.cacheSetter.SetDst(
-				resp.Path,
-				resp.Md5,
-				sce.Md5(),
-				int64(resp.Size),
-			)
-		}
-		return nil
+		return util.TryParallelDo(ctx, su.parallelDo, func(ctx context.Context) error {
+			return su.upSrc_(ctx, src)
+		})
 	}
+}
+
+func (su *Sync) upSrc_(
+	ctx context.Context,
+	src Src,
+) error {
+	path := su.upRemotePath(src)
+	if su.progress != nil {
+		message := src.AbsPath()
+		pt := NewProgressTracker(su.progress, message)
+		ctx = context.WithValue(ctx, client.XloadTrackerKey, pt)
+	}
+	resp, err := su.dstClient.Up(ctx, src, path)
+	if err != nil {
+		return err
+	}
+	sce := su.getOrSetSrcCacheEntry(ctx, src.AbsPath())
+	if sce != nil && resp.Md5 != "" {
+		su.cacheSetter.SetDst(
+			resp.Path,
+			resp.Md5,
+			sce.Md5(),
+			int64(resp.Size),
+		)
+	}
+	return nil
 }
 
 func (su *Sync) delSrc(

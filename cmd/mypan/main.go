@@ -156,6 +156,9 @@ func (myApp MyApp) syncAction(cCtx *cli.Context, src, dst string, up bool) error
 	if progress := myApp.progress; progress != nil {
 		opts = append(opts, Progress(progress))
 	}
+	if p := cCtx.Int("parallel"); p > 1 {
+		opts = append(opts, Parallel(p))
+	}
 	dstCacheStore, err := store.NewFileCacheStore(
 		config.StoreKeyDstCacheEntry,
 		jsonStore,
@@ -405,6 +408,7 @@ func (myApp MyApp) Run(args []string) {
 				Flags: []cli.Flag{
 					&cli.BoolFlag{Name: "dryrun"},
 					&cli.BoolFlag{Name: "nodelete"},
+					&cli.IntFlag{Name: "parallel", Aliases: []string{"p"}},
 				},
 				ArgsUsage: "localpath remotepath",
 				Action: func(cCtx *cli.Context) error {
@@ -440,6 +444,7 @@ func (myApp MyApp) Run(args []string) {
 					&cli.BoolFlag{Name: "dryrun"},
 					&cli.BoolFlag{Name: "nodelete"},
 					&cli.BoolFlag{Name: "continue", Aliases: []string{"c"}},
+					&cli.IntFlag{Name: "parallel", Aliases: []string{"p"}},
 				},
 				ArgsUsage: "remotepath localpath",
 				Action: func(cCtx *cli.Context) error {

@@ -31,6 +31,7 @@ type DownMan struct {
 
 	cacheSetter CacheSetterI
 	progress    progress.Writer
+	parallelDo  *util.ParallelDo
 	continue_   bool
 }
 
@@ -48,6 +49,11 @@ func (dm *DownMan) CacheSetter(cacheSetter CacheSetterI) *DownMan {
 
 func (dm *DownMan) Progress(progress progress.Writer) *DownMan {
 	dm.progress = progress
+	return dm
+}
+
+func (dm *DownMan) Parallel(parallelDo *util.ParallelDo) *DownMan {
+	dm.parallelDo = parallelDo
 	return dm
 }
 
@@ -107,6 +113,17 @@ func (dm *DownMan) downFileByFsId(
 }
 
 func (dm *DownMan) down(
+	ctx context.Context,
+	relpath string,
+	outpath string,
+	dlink string,
+) error {
+	return util.TryParallelDo(ctx, dm.parallelDo, func(ctx context.Context) error {
+		return dm.down_(ctx, relpath, outpath, dlink)
+	})
+}
+
+func (dm *DownMan) down_(
 	ctx context.Context,
 	relpath string,
 	outpath string,
