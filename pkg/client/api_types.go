@@ -183,7 +183,7 @@ func DecodeResponse(r io.Reader, v interface{}) error {
 func JSONIsAPIError(data []byte) error {
 	var apierr APIError
 	if err := json.Unmarshal(data, &apierr); err != nil {
-		return errors.Wrap(err, "unmarshal response (trying error)")
+		return errors.Wrapf(err, "unmarshal response (trying error): %d: %s", len(data), data)
 	}
 	if err := apierr.Err(); err != nil {
 		return err
