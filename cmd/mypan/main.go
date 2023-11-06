@@ -456,6 +456,25 @@ func (myApp MyApp) Run(args []string) error {
 				},
 			},
 			{
+				Name: "walk",
+				Flags: []cli.Flag{
+					&cli.IntFlag{Name: "parallel", Aliases: []string{"p"}},
+				},
+				ArgsUsage: "remotepath argv...",
+				Action: func(cCtx *cli.Context) error {
+					src := cCtx.Args().Get(0)
+					argv := cCtx.Args().Tail()
+					if len(argv) == 0 {
+						return cli.Exit("argv is required", 1)
+					}
+					w := NewWalker(myApp.dstClient, argv)
+					if p := cCtx.Int("parallel"); p > 1 {
+						w.Parallel(p)
+					}
+					return w.Walk(myApp.ctx, src)
+				},
+			},
+			{
 				Name:      "rename",
 				ArgsUsage: "remotepath newname",
 				Action: func(cCtx *cli.Context) error {
