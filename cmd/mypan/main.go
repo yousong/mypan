@@ -208,7 +208,7 @@ func (myApp MyApp) copyMoveAction(
 	return nil
 }
 
-func (myApp MyApp) Run(args []string) {
+func (myApp MyApp) Run(args []string) error {
 	cfg := config.Global
 
 	var ()
@@ -501,8 +501,8 @@ func (myApp MyApp) Run(args []string) {
 			&cli.Author{Name: "Yousong Zhou", Email: "yszhou4tech@gmail.com"},
 		},
 	}
-	app.Run(args)
-	myApp.progreseStop()
+	defer myApp.progreseStop()
+	return app.Run(args)
 }
 
 func (myApp MyApp) progressRender() {
@@ -523,5 +523,8 @@ func (myApp MyApp) progreseStop() {
 
 func main() {
 	flag.Lookup("logtostderr").Value.Set("true")
-	NewMyApp().Run(os.Args)
+	if err := NewMyApp().Run(os.Args); err != nil {
+		glog.Errorf("%v", err)
+		os.Exit(1)
+	}
 }
