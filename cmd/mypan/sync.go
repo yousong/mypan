@@ -252,7 +252,9 @@ func Progress(progress progress.Writer) SyncOpt {
 
 func Parallel(n int) SyncOpt {
 	return func(su *Sync) {
-		su.parallelDo = util.NewParallelDo(n)
+		su.parallelDo = util.NewParallelDo(n,
+			util.JoinOnCheckErr(true),
+		)
 	}
 }
 

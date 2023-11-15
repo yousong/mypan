@@ -41,7 +41,9 @@ func NewWalker(
 }
 
 func (w *Walker) Parallel(n int) {
-	w.parallelDo = util.NewParallelDo(n)
+	w.parallelDo = util.NewParallelDo(n,
+		util.JoinOnCheckErr(true),
+	)
 }
 
 func (w *Walker) Walk(ctx context.Context, dir string) error {
