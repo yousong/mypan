@@ -9,20 +9,42 @@ import (
 
 type ParallelDoFunc func(ctx context.Context) error
 
+type ParallelDoOpt func(pd *ParallelDo)
+
+func CheckErrBeforeDo(checkErrBeforeDo bool) ParallelDoOpt {
+	return func(pd *ParallelDo) {
+		pd.checkErrBeforeDo = checkErrBeforeDo
+	}
+}
+func JoinOnCheckErr(joinOnCheckErr bool) ParallelDoOpt {
+	return func(pd *ParallelDo) {
+		pd.joinOnCheckErr = joinOnCheckErr
+	}
+}
+
 type ParallelDo struct {
 	sem *semaphore.Weighted
 	wg  *sync.WaitGroup
+
+	checkErrBeforeDo bool
+	joinOnCheckErr   bool
 
 	mu   *sync.Mutex
 	errs []error
 }
 
-func NewParallelDo(n int) *ParallelDo {
+func NewParallelDo(n int, opts ...ParallelDoOpt) *ParallelDo {
 	pd := &ParallelDo{
 		sem: semaphore.NewWeighted(int64(n)),
 		wg:  &sync.WaitGroup{},
 
+		checkErrBeforeDo: true,
+		joinOnCheckErr:   false,
+
 		mu: &sync.Mutex{},
+	}
+	for _, opt := range opts {
+		opt(pd)
 	}
 	return pd
 }
@@ -48,8 +70,15 @@ func (pd *ParallelDo) appendErr(err error) {
 // should any previous calls return a non-nil error.  Otherwise the return will
 // be nil.  As such callers can retry if they got a non-nil error return
 func (pd *ParallelDo) Do(ctx context.Context, f ParallelDoFunc) error {
-	if err := pd.err(); err != nil {
-		return err
+	if pd.checkErrBeforeDo {
+		if err := pd.err(); err != nil {
+			if pd.joinOnCheckErr {
+				if joinErr := pd.Join(ctx); joinErr != nil {
+					return NewMultiError(err, joinErr)
+				}
+			}
+			return err
+		}
 	}
 
 	err := pd.sem.Acquire(ctx, 1)
