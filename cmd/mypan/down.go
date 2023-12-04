@@ -76,6 +76,14 @@ func (dm *DownMan) Down(
 	return dm.downDir(ctx, relpath, outpath)
 }
 
+func (dm *DownMan) DownByFsId(
+	ctx context.Context,
+	fsId uint64,
+	outpath string,
+) error {
+	return dm.downFileByFsId(ctx, outpath, fsId)
+}
+
 func (dm *DownMan) downDir(
 	ctx context.Context,
 	relpath, outpath string,
@@ -90,8 +98,7 @@ func (dm *DownMan) downDir(
 			continue
 		}
 		outpath := filepath.Join(outpath, strings.TrimPrefix(ent.Path, abspath))
-		relpath := dm.client.RelPath(ent.Path)
-		err := dm.downFileByFsId(ctx, relpath, outpath, ent.FsId)
+		err := dm.downFileByFsId(ctx, outpath, ent.FsId)
 		if err != nil {
 			return err
 		}
@@ -101,7 +108,6 @@ func (dm *DownMan) downDir(
 
 func (dm *DownMan) downFileByFsId(
 	ctx context.Context,
-	relpath string,
 	outpath string,
 	fsId uint64,
 ) error {
@@ -109,6 +115,7 @@ func (dm *DownMan) downFileByFsId(
 	if err != nil {
 		return err
 	}
+	relpath := dm.client.RelPath(meta.Path)
 	return dm.down(ctx, relpath, outpath, meta.DLink)
 }
 
