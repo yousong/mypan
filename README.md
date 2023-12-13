@@ -18,7 +18,7 @@
 
 # 命令
 
-DATE: 2023/10/03
+DATE: 2023/12/13
 ```
 NAME:
    mypan - A baidu netdisk client
@@ -41,9 +41,11 @@ COMMANDS:
    syncup          
    down, download  
    syncdown        
+   walk            
    rename          
    mv, move        
    cp, copy        
+   version         
    help, h         Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
