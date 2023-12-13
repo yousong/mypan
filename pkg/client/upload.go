@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"syscall"
 
+	"mypan/pkg/sysdep"
 	"mypan/pkg/util"
 
 	"github.com/pkg/errors"
@@ -54,11 +54,11 @@ func (client *Client) Upload(
 		Size:  fi.Size(),
 		Mtime: fi.ModTime().Unix(),
 	}
-	switch fiSys := fi.Sys().(type) {
-	case *syscall.Stat_t:
-		statopt.Ctime = fiSys.Ctim.Sec
-	default:
-		client.vlog().Infof("unexpected stat type: %T", fiSys)
+	ctime := sysdep.FileInfoGetCtime(fi)
+	if ctime >= 0 {
+		statopt.Ctime = ctime
+	} else {
+		client.vlog().Infof("fetch ctime failed, stat source: %T", fi.Sys())
 	}
 	if statopt.Size < MIN_SIZE_MULTIPART_UPLOAD {
 		return client.uploadSingle(ctx, f, dst)

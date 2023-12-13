@@ -12,11 +12,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"syscall"
 
 	"mypan/pkg/client"
 	"mypan/pkg/config"
 	"mypan/pkg/store"
+	"mypan/pkg/sysdep"
 	"mypan/pkg/util"
 
 	"github.com/golang/glog"
@@ -609,9 +609,10 @@ func (su *Sync) getOrSetSrcCacheEntry(ctx context.Context, srcAbsPath string) Sr
 	if err != nil {
 		return nil
 	}
-	var ino uint64
-	if stat, ok := fi.Sys().(*syscall.Stat_t); ok {
-		ino = stat.Ino
+	ino, err := sysdep.FileIdByPath(srcAbsPath)
+	if err != nil {
+		glog.Warningf("fetch file id %s: %v", srcAbsPath, err)
+		return nil
 	}
 
 	// cache hit?
