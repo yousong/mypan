@@ -16,6 +16,12 @@
 
 	mypan auth
 
+# 安装
+
+Github releases, https://github.com/yousong/mypan/releases
+
+Docker镜像：https://hub.docker.com/r/yousong/mypan
+
 # 命令
 
 DATE: 2023/12/13
