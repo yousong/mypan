@@ -125,9 +125,9 @@ type MyApp struct {
 	timeout time.Duration
 	render  Render
 
-	dstClient client.ClientI
-	dirStore  store.StoreI
-	jsonStore store.StoreSerdeI
+	dstClient   client.ClientI
+	configStore store.StoreSerdeI
+	cacheStore  store.StoreSerdeI
 
 	progress *progress.Progress
 }
@@ -145,9 +145,9 @@ func (myApp MyApp) syncAction(cCtx *cli.Context, src, dst string, up bool) error
 		return cli.Exit("src and dst arguments are required", 1)
 	}
 	var (
-		ctx       = myApp.ctx
-		dstClient = myApp.dstClient
-		jsonStore = myApp.jsonStore
+		ctx        = myApp.ctx
+		dstClient  = myApp.dstClient
+		cacheStore = myApp.cacheStore
 	)
 
 	var opts []SyncOpt
@@ -165,7 +165,7 @@ func (myApp MyApp) syncAction(cCtx *cli.Context, src, dst string, up bool) error
 	}
 	dstCacheStore, err := store.NewFileCacheStore(
 		config.StoreKeyDstCacheEntry,
-		jsonStore,
+		cacheStore,
 		NewDstCacheEntry,
 	)
 	if err != nil {
@@ -173,7 +173,7 @@ func (myApp MyApp) syncAction(cCtx *cli.Context, src, dst string, up bool) error
 	}
 	srcCacheStore, err := store.NewFileCacheStore(
 		config.StoreKeySrcCacheEntry,
-		jsonStore,
+		cacheStore,
 		NewSrcCacheEntry,
 	)
 	if err != nil {
@@ -213,7 +213,13 @@ func (myApp MyApp) copyMoveAction(
 func (myApp MyApp) Run(args []string) error {
 	cfg := config.Global
 
-	var ()
+	newJsonStoreByPath := func(p string) (store.StoreSerdeI, error) {
+		dirStore, err := store.NewDirStore(p)
+		if err != nil {
+			return nil, errors.Wrapf(err, "new dir store (%q)", p)
+		}
+		return store.NewJSONStore(dirStore), nil
+	}
 	app := &cli.App{
 		Name:          "mypan",
 		Usage:         "A baidu netdisk client",
@@ -223,7 +229,8 @@ func (myApp MyApp) Run(args []string) error {
 			&cli.StringFlag{Name: "appkey", Value: cfg.AppKey, Destination: &cfg.AppKey, EnvVars: []string{"MYPAN_APPKEY"}},
 			&cli.StringFlag{Name: "secretkey", Value: cfg.SecretKey, Destination: &cfg.SecretKey, EnvVars: []string{"MYPAN_SECRETKEY"}},
 			&cli.StringFlag{Name: "appbasedir", Value: cfg.AppBaseDir, Destination: &cfg.AppBaseDir, EnvVars: []string{"MYPAN_APPBASEDIR"}},
-			&cli.PathFlag{Name: "rundir", Value: cfg.RunDir, Destination: &cfg.RunDir, EnvVars: []string{"MYPAN_RUNDIR"}},
+			&cli.PathFlag{Name: "configdir", Value: cfg.ConfigDir, Destination: &cfg.ConfigDir, EnvVars: []string{"MYPAN_CONFIGDIR"}},
+			&cli.PathFlag{Name: "cachedir", Value: cfg.CacheDir, Destination: &cfg.CacheDir, EnvVars: []string{"MYPAN_CACHEDIR"}},
 
 			&cli.DurationFlag{Name: "timeout", Destination: &myApp.timeout},
 			&cli.BoolFlag{Name: "noprogress"},
@@ -252,16 +259,22 @@ func (myApp MyApp) Run(args []string) error {
 			}
 			myApp.ctx, _ = signal.NotifyContext(myApp.ctx, syscall.SIGINT, syscall.SIGTERM)
 
-			// dir store
-			var err error
-			myApp.dirStore, err = store.NewDirStore(cfg.RunDir)
+			var (
+				err        error
+				accessAuth client.AccessAuth
+			)
+			// cache store
+			myApp.cacheStore, err = newJsonStoreByPath(cfg.CacheDir)
 			if err != nil {
-				return errors.Wrap(err, "new dir store")
+				return errors.Wrap(err, "new cache store")
+			}
+			// config store
+			myApp.configStore, err = newJsonStoreByPath(cfg.ConfigDir)
+			if err != nil {
+				return errors.Wrap(err, "new config store")
 			}
 			// dst client
-			var accessAuth client.AccessAuth
-			myApp.jsonStore = store.NewJSONStore(myApp.dirStore)
-			if err := myApp.jsonStore.Get(config.StoreKeyAccessAuth, &accessAuth); err != nil {
+			if err := myApp.configStore.Get(config.StoreKeyAccessAuth, &accessAuth); err != nil {
 				glog.Warningf("load access auth: %v", err)
 			}
 			clientCfg := client.Config{
@@ -295,7 +308,7 @@ func (myApp MyApp) Run(args []string) error {
 					&cli.BoolFlag{Name: "refresh"},
 				},
 				Action: func(cCtx *cli.Context) error {
-					authMan := NewAuthMan(myApp.dstClient, myApp.jsonStore)
+					authMan := NewAuthMan(myApp.dstClient, myApp.configStore)
 					if err := authMan.Auth(myApp.ctx); err != nil {
 						return cli.Exit(err, 1)
 					}

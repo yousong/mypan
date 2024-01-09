@@ -5,6 +5,8 @@ package config
 import (
 	"os"
 	"path"
+
+	"github.com/golang/glog"
 )
 
 type Config struct {
@@ -13,20 +15,27 @@ type Config struct {
 	SecretKey  string
 	AppBaseDir string
 
-	RunDir string
+	ConfigDir string
+	CacheDir  string
 }
 
 var Global Config
 
 func init() {
-	homeDir, err := os.UserHomeDir()
+	configDir, err := os.UserConfigDir()
 	if err != nil {
-		os.Exit(1)
+		glog.Fatalf("user config dir: %v", err)
 	}
-	runDir := path.Join(homeDir, ".mypan")
+	configDir = path.Join(configDir, "mypan")
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		glog.Fatalf("user cache dir: %v", err)
+	}
+	cacheDir = path.Join(cacheDir, "mypan")
 
 	Global = Config{
-		RunDir: runDir,
+		CacheDir:  cacheDir,
+		ConfigDir: configDir,
 
 		AppID:      AppID,
 		AppKey:     AppKey,

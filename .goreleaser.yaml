@@ -50,6 +50,9 @@ kos:
       - linux/arm
     bare: true
     sbom: none
+    env:
+      - MYPAN_CONFIGDIR=/mypan/config
+      - MYPAN_CACHEDIR=/mypan/cache
     main: ./cmd/mypan
 
 changelog:
