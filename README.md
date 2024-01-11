@@ -24,7 +24,7 @@ Docker镜像：https://hub.docker.com/r/yousong/mypan
 
 # 命令
 
-DATE: 2023/12/13
+DATE: 2024/01/11
 ```
 NAME:
    mypan - A baidu netdisk client
@@ -59,7 +59,8 @@ GLOBAL OPTIONS:
    --appkey value      (default: "4uwf4wql9Gtg3Dr79r6sKRgrac4M9uc1") [$MYPAN_APPKEY]
    --secretkey value   (default: "1mBQ9NOpW33EjLcYGzWQxTGUSNteZSfX") [$MYPAN_SECRETKEY]
    --appbasedir value  (default: "/apps/mypan") [$MYPAN_APPBASEDIR]
-   --rundir value      (default: "/home/yousong/.mypan") [$MYPAN_RUNDIR]
+   --configdir value   (default: "/home/yousong/.config/mypan") [$MYPAN_CONFIGDIR]
+   --cachedir value    (default: "/home/yousong/.cache/mypan") [$MYPAN_CACHEDIR]
    --timeout value     (default: 0s)
    --noprogress        (default: false)
    --format value      allowed values are json, table (default: "json")
